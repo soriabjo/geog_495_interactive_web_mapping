@@ -4,7 +4,7 @@
 <head>
     <head>
         <meta charset="utf-8">
-        <title>Interactive Web Mapping</title>
+        <title>Washington State COVID-19 Case Rate by County</title>
         <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
         <link href="https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.css" rel="stylesheet">
         <script src="https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.js"></script>
@@ -49,16 +49,16 @@
                 top: 0;
                 height: 100px;
                 margin-top: 20px;
-                width: 250px;
+                width: 300px;
             }
 
             #legend {
                 padding: 10px;
                 box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
                 line-height: 18px;
-                height: 210px;
+                height: 180px;
                 margin-bottom: 40px;
-                width: 150px;
+                width: 170px;
             }
 
             .legend-key {
@@ -80,9 +80,9 @@
 <body>
     <div id="map"></div>
     <div class="map-overlay" id="features">
-        <h2>US population density</h2>
+        <h2>COVID-19 County Case Rate</h2>
         <div id="text-description">
-            <p>Hover over a state!</p>
+            <p>Hover over a WA state county</p>
         </div>
     </div>
     <div class="map-overlay" id="legend"></div>
@@ -91,46 +91,40 @@
 
         const map = new mapboxgl.Map({
                 container: 'map', // container ID
-                style: 'mapbox://styles/mapbox/light-v10', // style URL
-                zoom: 3, // starting zoom
-                center: [-100, 40] // starting center
+                style: 'mapbox://styles/mapbox/dark-v10', // style URL
+                zoom: 6.6, // starting zoom
+                center: [-120.20130713727846, 47.33402155859716] // starting center
             }
         );
 
         async function geojsonFetch() { 
-            let response = await fetch('assets/stateData.geojson');
-            let stateData = await response.json();
+            let response = await fetch('assets/wa-covid-data-102521.geojson');
+            let covidData = await response.json();
 
             map.on('load', function loadingData() {
                 // add layer
-                map.addSource('stateData', {
+                map.addSource('covidData', {
                     type: 'geojson',
-                    data: stateData
+                    data: covidData
                 });
 
                 map.addLayer({
-                    'id': 'stateData-layer',
+                    'id': 'covidData-layer',
                     'type': 'fill',
-                    'source': 'stateData',
+                    'source': 'covidData',
                     'paint': {
                         'fill-color': [
                             'step',
-                            ['get', 'density'],
-                            '#FFEDA0',   // stop_output_0
-                            10,          // stop_input_0
-                            '#FED976',   // stop_output_1
-                            20,          // stop_input_1
-                            '#FEB24C',   // stop_output_2
-                            50,          // stop_input_2
-                            '#FD8D3C',   // stop_output_3
-                            100,         // stop_input_3
-                            '#FC4E2A',   // stop_output_4
-                            200,         // stop_input_4
-                            '#E31A1C',   // stop_output_5
-                            500,         // stop_input_5
-                            '#BD0026',   // stop_output_6
-                            1000,        // stop_input_6
-                            "#800026"    // stop_output_7
+                            ['get', 'casePer10k'],
+                            '#ffffcc',   // stop_output_0
+                            500,          // stop_input_0
+                            '#c2e699',   // stop_output_1
+                            1000,          // stop_input_1
+                            '#78c679',   // stop_output_2
+                            1500,          // stop_input_2
+                            '#31a354',   // stop_output_3
+                            2000,         // stop_input_3
+                            '#006837'
                         ],
                         'fill-outline-color': '#BBBBBB',
                         'fill-opacity': 0.7,
@@ -138,28 +132,22 @@
                 });
                 // add legend
                 const layers = [
-                    '0-9',
-                    '10-19',
-                    '20-49',
-                    '50-99',
-                    '100-199',
-                    '200-499',
+                    '0-499',
                     '500-999',
-                    '1000 and more'
+                    '1000-1499',
+                    '1500-1999',
+                    '2000+'
                 ];
                 const colors = [
-                    '#FFEDA070',
-                    '#FED97670',
-                    '#FEB24C70',
-                    '#FD8D3C70',
-                    '#FC4E2A70',
-                    '#E31A1C70',
-                    '#BD002670',
-                    '#80002670'
+                    '#ffffcc',
+                    '#c2e699',
+                    '#78c679',
+                    '#31a354',
+                    '#006837'
                 ];
 
                 const legend = document.getElementById('legend');
-                legend.innerHTML = "<b>Population Density<br>(people/sq.mi.)</b><br><br>";
+                legend.innerHTML = "<b>COVID-19 Case Rate<br>(cases/10,000 people)</b><br><br>";
 
                 layers.forEach((layer, i) => {
                     const color = colors[i];
@@ -176,12 +164,12 @@
                 });
 
                 map.on('mousemove', ({point}) => {
-                    const state = map.queryRenderedFeatures(point, {
-                        layers: ['stateData-layer']
+                    const county = map.queryRenderedFeatures(point, {
+                        layers: ['covidData-layer']
                     });
-                    document.getElementById('text-description').innerHTML = state.length ?
-                        `<h3>${state[0].properties.name}</h3><p><strong><em>${state[0].properties.density}</strong> people per square mile</em></p>` :
-                        `<p>Hover over a state!</p>`;
+                    document.getElementById('text-description').innerHTML = county.length ?
+                        `<h3>${county[0].properties.name}</h3><p><strong><em>${county[0].properties.casePer10k}</strong> cases per 10,000 people</em></p>` :
+                        `<p>Hover over a WA state county</p>`;
                 });
 
             });
